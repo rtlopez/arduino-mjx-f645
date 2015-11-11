@@ -19,7 +19,7 @@ MjxPID::MjxPID(double* Input, double* Output, double* Setpoint, double Kp, doubl
   mySetpoint = Setpoint;
 	inAuto = false;
 	
-	SetOutputLimits(0, 255); //default output limit corresponds to the arduino pwm limits
+	SetOutputLimits(0, 255, 0.6); //default output limit corresponds to the arduino pwm limits
 
   SampleTime = 100;			   //default Controller Sample Time is 0.1 seconds
 
@@ -84,9 +84,8 @@ bool MjxPID::Compute()
 
 void MjxPID::FixITerm()
 {
-    const double rate = 0.5;
-    if(ITerm > outMax * rate) ITerm = outMax * rate;
-    else if(ITerm < outMin * rate) ITerm = outMin * rate;
+    if(ITerm > outMax * outIRate) ITerm = outMax * outIRate;
+    else if(ITerm < outMin * outIRate) ITerm = outMin * outIRate;
 }
 
 void MjxPID::FixOutput()
@@ -140,11 +139,12 @@ void MjxPID::SetSampleTime(int NewSampleTime)
  *  want to clamp it from 0-125.  who knows.  at any rate, that can all be done
  *  here.
  **************************************************************************/
-void MjxPID::SetOutputLimits(double Min, double Max)
+void MjxPID::SetOutputLimits(double Min, double Max, double iRate)
 {
     if(Min >= Max) return;
     outMin = Min;
     outMax = Max;
+    outIRate = iRate;
     if(inAuto)
     {
       FixOutput();

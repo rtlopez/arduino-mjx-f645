@@ -236,7 +236,6 @@ void MjxRx::bindTx()
   Serial.println();
 
   Serial.println(F(" * Binding done"));
-  Serial.println();
 }
 
 void serial_dump(const uint8_t * buf, uint8_t len)

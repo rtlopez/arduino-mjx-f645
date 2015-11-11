@@ -53,7 +53,7 @@ void MjxController::begin()
   servo_roll.attach(roll_pin, 1000, 2000);
   
   pid_yaw.SetMode(AUTOMATIC);
-  pid_yaw.SetOutputLimits(0, 180);
+  pid_yaw.SetOutputLimits(0, 180, 0.6);
   pid_yaw.SetSampleTime(20);
   
   update();
@@ -69,8 +69,9 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
 
   yaw_in = ctrl.yaw;
   if(ctrl.yaw >= 0x80) yaw_in = 0x80 - ctrl.yaw;
+  if(ctrl.flags == 0x10) yaw_in *= -1;
   yaw_in *= -180.0/127.0;
-
+  
   pitch_in = ctrl.pitch;
   if(ctrl.pitch >= 0x80) pitch_in = 0x80 - ctrl.pitch;
   pitch_in *= -1.0;
@@ -89,8 +90,8 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   gyro_roll = loc.gyroRoll();
 
   // calculate output
-  const int hiFrom = 127 + 64;
-  const int loFrom = -hiFrom;
+  const int loFrom = -127 + 64;
+  const int hiFrom = -loFrom;
   const int loTo = 0;
   const int hiTo = 180;
   
@@ -101,13 +102,13 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   
   // tuning
   //float yaw_kp = 0.15;
-  float yaw_kp = mapFloat(ctrl.roll_trim, 1, 127, 0, 1);     // 0.15
+  float yaw_kp = mapFloat(ctrl.roll_trim, 1, 127, 0, 1);        // 0.15
   
   //float yaw_ki = 0.35;
-  float yaw_ki = mapFloat(ctrl.yaw_trim, 1, 127, 0, 1);      // 0.35
+  float yaw_ki = mapFloat(ctrl.yaw_trim, 1, 127, 0, 0.4);       // 0.35
   
   //float yaw_kd = 0.05
-  float yaw_kd = mapFloat(ctrl.pitch_trim, 1, 127, 0, 1);     // 0.05
+  float yaw_kd = mapFloat(ctrl.pitch_trim, 1, 127, 0, 0.2);     // 0.05
 
   float yaw_gyro_rate = 0.1;
   //float yaw_gyro_rate = mapFloat(ctrl.roll_trim, 1, 127, 0, 0.05);  // 0.05
@@ -120,13 +121,13 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   //yaw_out = map(yaw_out, 0, 127, loTo, hiTo);
   //yaw_out = multiMap(yaw_out, yaw_map_in, yaw_map_out, sizeof(yaw_map_in));
   
-  if(ctrl.flags == 0x10) // yaw manual mode
-  {
-    yaw_out = yaw_in > 0 ? yaw_in : 0;
-  }
+  //if(ctrl.flags == 0x10) // yaw manual mode
+  //{
+  //  yaw_out = yaw_in > 0 ? yaw_in : 0;
+  //}
 
   unsigned long now = millis();
-  if(1 && now - disp_tm > 1000)
+  if(0 && now - disp_tm > 500)
   {
     //Serial.println();
     Serial.print(F(" * "));  Serial.print(yaw_in);

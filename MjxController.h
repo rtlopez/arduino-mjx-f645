@@ -1,9 +1,11 @@
 #ifndef MjxController_h
 #define MjxController_h
 
+#include "MjxConfig.h"
 #include "MjxRx.h"
 #include "MjxPosition.h"
 #include "MjxPID.h"
+#include "MjxServo.h"
 
 #include <Servo.h>
 
@@ -21,7 +23,7 @@ class MjxController
     uint8_t throttle_pin, yaw_pin, pitch_pin, roll_pin;
     
     MjxPID pid_yaw;
-    Servo servo_throttle, servo_yaw, servo_pitch, servo_roll;
+    MjxServo servo_throttle, servo_yaw, servo_pitch, servo_roll;
 };
 
 #endif

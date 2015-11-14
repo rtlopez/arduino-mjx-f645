@@ -6,6 +6,7 @@
  **********************************************************************************************/
 
 #include "Arduino.h"
+#include "MjxConfig.h"
 #include "MjxPID.h"
 
 /*Constructor (...)*********************************************************
@@ -63,7 +64,8 @@ bool MjxPID::Compute()
       lastInput = *myInput;
       lastTime = now;
 
-      if(0 && now - debugTime > 50)
+      #if MJX_DEBUG_PID > 0
+      if(now - debugTime > MJX_DEBUG_PID)
       {
         const char * sep = reinterpret_cast<const char *>(F(" "));
         Serial.print(F("#"));  Serial.print(now / 1000.0, 2); // 0
@@ -77,6 +79,7 @@ bool MjxPID::Compute()
         Serial.println();
         debugTime = now;
       }
+      #endif
 	    return true;
    }
    return false;

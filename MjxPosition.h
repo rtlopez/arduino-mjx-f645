@@ -3,6 +3,7 @@
 
 #include "Arduino.h"
 #include "MPU6050.h"
+#include "MjxConfig.h"
 
 class MjxLocation
 {

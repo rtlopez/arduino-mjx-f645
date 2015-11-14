@@ -4,7 +4,7 @@ float mapFloat(float x, float in_min, float in_max, float out_min, float out_max
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
+/*
 int multiMap(int val, const int* _in, const int* _out, uint8_t size)
 {
   // take care the value is within range
@@ -25,6 +25,7 @@ int multiMap(int val, const int* _in, const int* _out, uint8_t size)
 
 static const int yaw_map_in[]  = { 0, 45,  90, 135, 180 };
 static const int yaw_map_out[] = { 0, 90, 120, 150, 180 };
+*/
 
 MjxController::MjxController(int throttle_pin_, int yaw_pin_, int pitch_pin_, int roll_pin_):
   throttle_pin(throttle_pin_), yaw_pin(yaw_pin_), pitch_pin(pitch_pin_), roll_pin(roll_pin_), 
@@ -53,14 +54,15 @@ void MjxController::begin()
   servo_roll.attach(roll_pin, 1000, 2000);
   
   pid_yaw.SetMode(AUTOMATIC);
-  pid_yaw.SetOutputLimits(0, 180, 0.6);
+  pid_yaw.SetOutputLimits(0, 180, MJX_CONTROLLER_YAW_PID_I_RATE);
   pid_yaw.SetSampleTime(20);
   
   update();
 }
 
+#if MJX_DEBUG_CONTROLLER
 static uint64_t disp_tm = 0;
-//static uint64_t interval = 300;
+#endif
 
 void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
 {
@@ -90,7 +92,7 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   gyro_roll = loc.gyroRoll();
 
   // calculate output
-  const int loFrom = -127 + 64;
+  const int loFrom = -127 - 64;
   const int hiFrom = -loFrom;
   const int loTo = 0;
   const int hiTo = 180;
@@ -102,15 +104,15 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   
   // tuning
   //float yaw_kp = 0.15;
-  float yaw_kp = mapFloat(ctrl.roll_trim, 1, 127, 0, 1);        // 0.15
+  float yaw_kp = mapFloat(ctrl.roll_trim, 1, 127, 0, MJX_CONTROLLER_YAW_PID_KP);      // 0.15
   
   //float yaw_ki = 0.35;
-  float yaw_ki = mapFloat(ctrl.yaw_trim, 1, 127, 0, 0.4);       // 0.35
+  float yaw_ki = mapFloat(ctrl.yaw_trim, 1, 127, 0, MJX_CONTROLLER_YAW_PID_KI);       // 0.35
   
   //float yaw_kd = 0.05
-  float yaw_kd = mapFloat(ctrl.pitch_trim, 1, 127, 0, 0.2);     // 0.05
+  float yaw_kd = mapFloat(ctrl.pitch_trim, 1, 127, 0, MJX_CONTROLLER_YAW_PID_KD);     // 0.05
 
-  float yaw_gyro_rate = 0.1;
+  float yaw_gyro_rate = MJX_CONTROLLER_YAW_PID_GYRO_RATE;                             // 0.1
   //float yaw_gyro_rate = mapFloat(ctrl.roll_trim, 1, 127, 0, 0.05);  // 0.05
   
   gyro_yaw *= yaw_gyro_rate;
@@ -126,8 +128,9 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   //  yaw_out = yaw_in > 0 ? yaw_in : 0;
   //}
 
+  #if MJX_DEBUG_CONTROLLER > 0
   unsigned long now = millis();
-  if(0 && now - disp_tm > 500)
+  if(now - disp_tm > MJX_DEBUG_CONTROLLER)
   {
     //Serial.println();
     Serial.print(F(" * "));  Serial.print(yaw_in);
@@ -140,38 +143,40 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
     Serial.println();
     disp_tm = now;
   }
+  #endif
+  
   update();
-
   if(updated) loc.reset();
 }
 
+#if MJX_DEBUG_SERVO
+static uint64_t disp_tm2 = 0;
+#endif
+
 void MjxController::update()
 {
-  //if(millis() - disp_tm > interval)
-  //{
-    /*
-    Serial.print(F(" < TX(T/Y/P/R): ")); Serial.print((int)throttle_in);
-    Serial.print(F(" / ")); Serial.print((int)yaw_in);
-    Serial.print(F(" / ")); Serial.print((int)pitch_in);
-    Serial.print(F(" / ")); Serial.print((int)roll_in);
-    Serial.print(F(", GY(Y/P/R): ")); Serial.print(gyro_yaw);
-    Serial.print(F(" / ")); Serial.print(gyro_pitch);
-    Serial.print(F(" / ")); Serial.println(gyro_roll);
+  servo_throttle.write(throttle_out, MJX_SERVO_THROTTLE_SPEED);
+  servo_yaw.write((throttle_out > 10 ? yaw_out : 0), MJX_SERVO_YAW_SPEED);
+  servo_pitch.write(pitch_out, MJX_SERVO_PITCH_SPEED);
+  servo_roll.write(roll_out, MJX_SERVO_ROLL_SPEED);
 
-    Serial.print(F(" > RX(T/Y/P/R): ")); Serial.print((int)throttle_out);
-    Serial.print(F(" / ")); Serial.print((int)yaw_out);
-    Serial.print(F(" / ")); Serial.print((int)pitch_out);
-    Serial.print(F(" / ")); Serial.print((int)roll_out);
+  servo_throttle.update();
+  servo_yaw.update();
+  servo_pitch.update();
+  servo_roll.update();
+
+  #if MJX_DEBUG_SERVO > 0
+  unsigned long now = millis();
+  if(false && now - disp_tm2 > MJX_DEBUG_SERVO)
+  {
+    //Serial.println();
+    Serial.print(F(" * ")); Serial.print(servo_pitch.current());
+    Serial.print(F(" "));   Serial.print(servo_pitch.target());
+    Serial.print(F(" "));   Serial.print(servo_roll.current());
+    Serial.print(F(" "));   Serial.print(servo_roll.target());
     Serial.println();
-    Serial.println();
-    */
-    
-  //  disp_tm = millis();
-  //}
-  
-  servo_throttle.write(throttle_out);
-  servo_yaw.write((throttle_out > 10 ? yaw_out : 0));
-  servo_pitch.write(pitch_out);
-  servo_roll.write(roll_out);
+    disp_tm2 = now;
+  }
+  #endif
 }
 

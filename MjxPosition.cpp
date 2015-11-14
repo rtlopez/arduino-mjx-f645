@@ -20,8 +20,8 @@ void MjxPosition::begin()
     delay(500);
   }
 
-  //mpu.setDLPFMode(MPU6050_DLPF_3);
-  mpu.setDLPFMode(MPU6050_DLPF_1);
+  //mpu.setDLPFMode(MPU6050_DLPF_1);
+  mpu.setDLPFMode(MJX_POSITION_DLPF);
 
   // If you want, you can set gyroscope offsets
   // mpu.setGyroOffsetX(155);

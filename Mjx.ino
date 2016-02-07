@@ -25,9 +25,9 @@ void setup()
 {
   //Serial.begin(57600);
   Serial.begin(115200);
-  receiver.begin();
   controller.begin();
   positioner.begin();
+  receiver.begin();
 }
 
 void loop()

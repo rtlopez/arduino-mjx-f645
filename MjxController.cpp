@@ -48,21 +48,23 @@ MjxController::MjxController(int throttle_pin_, int yaw_pin_, int pitch_pin_, in
 
 void MjxController::begin()
 {
+  // attach servos
   servo_throttle.attach(throttle_pin, 1000, 2000);
   servo_yaw.attach(yaw_pin, 1000, 2000);
   servo_pitch.attach(pitch_pin, 1000, 2000);
   servo_roll.attach(roll_pin, 1000, 2000);
-  
+
+  // write initial values
+  servo_throttle.write(throttle_out, true);
+  servo_yaw.write(yaw_out, true);
+  servo_pitch.write(pitch_out, true);
+  servo_roll.write(roll_out, true);
+
+  // init PID controllers
   pid_yaw.SetMode(AUTOMATIC);
   pid_yaw.SetOutputLimits(0, 180, MJX_CONTROLLER_YAW_PID_I_RATE);
-  pid_yaw.SetSampleTime(20);
-  
-  update();
+  pid_yaw.SetSampleTime(MJX_SERVO_INTERVAL);
 }
-
-#if MJX_DEBUG_CONTROLLER
-static uint64_t disp_tm = 0;
-#endif
 
 void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
 {
@@ -76,7 +78,7 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
   
   pitch_in = ctrl.pitch;
   if(ctrl.pitch >= 0x80) pitch_in = 0x80 - ctrl.pitch;
-  pitch_in *= -1.0;
+  //pitch_in *= -1.0;
 
   roll_in = ctrl.roll;
   if(ctrl.roll >= 0x80) roll_in = 0x80 - ctrl.roll;
@@ -130,7 +132,8 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
 
   #if MJX_DEBUG_CONTROLLER > 0
   unsigned long now = millis();
-  if(now - disp_tm > MJX_DEBUG_CONTROLLER)
+  static unsigned long disp = millis();
+  if(now - disp > MJX_DEBUG_CONTROLLER)
   {
     //Serial.println();
     Serial.print(F(" * "));  Serial.print(yaw_in);
@@ -141,17 +144,13 @@ void MjxController::update(const MjxControls& ctrl, MjxLocation& loc)
     Serial.print(F(" ")); Serial.print(yaw_kd);
     Serial.print(F(" ")); Serial.print(yaw_gyro_rate);
     Serial.println();
-    disp_tm = now;
+    disp = now;
   }
   #endif
   
   update();
   if(updated) loc.reset();
 }
-
-#if MJX_DEBUG_SERVO
-static uint64_t disp_tm2 = 0;
-#endif
 
 void MjxController::update()
 {
@@ -167,15 +166,20 @@ void MjxController::update()
 
   #if MJX_DEBUG_SERVO > 0
   unsigned long now = millis();
-  if(false && now - disp_tm2 > MJX_DEBUG_SERVO)
+  static unsigned long disp = millis();
+  if(now - disp > MJX_DEBUG_SERVO)
   {
     //Serial.println();
-    Serial.print(F(" * ")); Serial.print(servo_pitch.current());
+    Serial.print(F(" * ")); Serial.print(servo_throttle.current());
+    Serial.print(F(" "));   Serial.print(servo_throttle.target());
+    Serial.print(F(" "));   Serial.print(servo_yaw.current());
+    Serial.print(F(" "));   Serial.print(servo_yaw.target());
+    Serial.print(F(" "));   Serial.print(servo_pitch.current());
     Serial.print(F(" "));   Serial.print(servo_pitch.target());
     Serial.print(F(" "));   Serial.print(servo_roll.current());
     Serial.print(F(" "));   Serial.print(servo_roll.target());
     Serial.println();
-    disp_tm2 = now;
+    disp = now;
   }
   #endif
 }

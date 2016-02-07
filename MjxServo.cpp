@@ -23,22 +23,27 @@ void MjxServo::detach()
   servo.detach();
 }
 
-void MjxServo::write(int value)
+void MjxServo::write(double value)
 {
-  write(value, 0);
+  write(value, 0.0);
 }
 
-void MjxServo::write(int value, double speed)
+void MjxServo::write(double value, double speed)
 {
   _target = value;
   _speed = speed;
+}
+
+void MjxServo::write(double value, boolean force)
+{
+  servo.write(value);
 }
 
 void MjxServo::update()
 {
   unsigned long now = millis();
   unsigned long tm = now - _ts;
-  if(tm >= 20)
+  if(tm >= MJX_SERVO_INTERVAL)
   {
     if(_speed > 0)
     {
@@ -65,7 +70,7 @@ void MjxServo::update()
     {
       _current = _target;
     }
-    servo.write(_current);
+    write(_current, true);
     _ts = now;
   }
 }

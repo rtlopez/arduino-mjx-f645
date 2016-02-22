@@ -55,7 +55,7 @@ bool MjxPID::Compute()
       double dSetpoint = (*mySetpoint - lastSetpoint);
  
       /*Compute PID Output*/
-      //double output = kp * error + ITerm - kd * dInput;
+      //*myOutput = kp * error + ITerm - kd * dInput;
       *myOutput = kp * error + ITerm - kd * dInput + 0.005 * kd * dSetpoint;
       FixOutput();
 	  
@@ -64,22 +64,6 @@ bool MjxPID::Compute()
       lastInput = *myInput;
       lastTime = now;
 
-      #if MJX_DEBUG_PID > 0
-      if(now - debugTime > MJX_DEBUG_PID)
-      {
-        const char * sep = reinterpret_cast<const char *>(F(" "));
-        Serial.print(F("#"));  Serial.print(now / 1000.0, 2); // 0
-        Serial.print(sep); Serial.print(*mySetpoint, 1);      // 1
-        Serial.print(sep); Serial.print(*myInput, 1);         // 2
-        Serial.print(sep); Serial.print(error, 1);            // 3
-        Serial.print(sep); Serial.print(*myOutput, 1);        // 4
-        Serial.print(sep); Serial.print(ITerm, 1);            // 5
-        Serial.print(sep); Serial.print(dInput, 1);           // 6
-        Serial.print(sep); Serial.print(dSetpoint, 1);        // 7
-        Serial.println();
-        debugTime = now;
-      }
-      #endif
 	    return true;
    }
    return false;
@@ -106,17 +90,16 @@ void MjxPID::SetTunings(double Kp, double Ki, double Kd)
    if (Kp<0 || Ki<0 || Kd<0) return;
  
    dispKp = Kp; dispKi = Ki; dispKd = Kd;
-   
-   double SampleTimeInSec = SampleTime / 1000.0;  
+    
    kp = Kp;
-   ki = Ki * SampleTimeInSec;
-   kd = Kd / SampleTimeInSec;
+   ki = Ki * SampleTime / 1000.0;
+   kd = Kd / SampleTime / 1000.0;
  
    if(controllerDirection == REVERSE)
    {
-      kp = (0 - kp);
-      ki = (0 - ki);
-      kd = (0 - kd);
+      kp = -kp;
+      ki = -ki;
+      kd = -kd;
    }
 }
   
@@ -150,8 +133,8 @@ void MjxPID::SetOutputLimits(double Min, double Max, double iRate)
     outIRate = iRate;
     if(inAuto)
     {
-      FixOutput();
       FixITerm();
+      FixOutput();
     }
 }
 
@@ -193,9 +176,9 @@ void MjxPID::SetControllerDirection(int Direction)
 {
    if(inAuto && Direction !=controllerDirection)
    {
-	    kp = (0 - kp);
-      ki = (0 - ki);
-      kd = (0 - kd);
+	    kp = -kp;
+      ki = -ki;
+      kd = -kd;
    }   
    controllerDirection = Direction;
 }

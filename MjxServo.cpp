@@ -43,20 +43,13 @@ void MjxServo::update()
 {
   unsigned long now = millis();
   unsigned long tm = now - _ts;
-  if(tm >= MJX_SERVO_INTERVAL)
+  if(tm >= MJX_UPDATE_INTERVAL)
   {
     if(_speed > 0)
     {
       double diff = _target - _current;
       double inc = _speed / 1000.0 * tm;
       inc = diff > 0 ? inc : -inc;
-      /*Serial.print(tm);
-      Serial.print(" "); Serial.print(_target);
-      Serial.print(" "); Serial.print(_current);
-      Serial.print(" "); Serial.print(_speed);
-      Serial.print(" "); Serial.print(inc, 4);
-      Serial.print(" "); Serial.print(diff, 4);
-      Serial.println();*/
       if(abs(inc) < abs(diff))
       {
         _current += inc;

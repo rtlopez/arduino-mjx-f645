@@ -24,7 +24,7 @@ const uint8_t MjxRx::freq_hopping[4][16] = {
  { 0x22, 0x27, 0x17, 0x39, 0x34, 0x28, 0x2B, 0x1D, 0x18, 0x2A, 0x21, 0x38, 0x10, 0x26, 0x20, 0x1F }   //  03 - TX sends actual packets using THIS ONE !
 };
 
-MjxRx::MjxRx(nRF24& radio_): radio(radio_)
+MjxRx::MjxRx(uint8_t ce_pin, uint8_t cs_pin): radio(ce_pin, cs_pin)
 {
   for(size_t i = 0; i < sizeof(data); i++) data[i] = 0;
 }
@@ -60,7 +60,7 @@ void MjxRx::begin()
   radio.write_register(RX_ADDR_P0, reinterpret_cast<const uint8_t *>(rx_tx_addr), 5);
   radio.write_register(RX_ADDR_P1, reinterpret_cast<const uint8_t *>(rx_p1_addr), 5);
   radio.write_register(TX_ADDR, reinterpret_cast<const uint8_t *>(rx_tx_addr), 5);
-
+  
   if(1)
   {
     radio.activate(0x53); // magic for BK2421 bank switch
@@ -69,23 +69,23 @@ void MjxRx::begin()
       //Serial.write("BK2421!\n");
       long nul = 0;
       // MJX: Same values
-      radio.write_register(0x00, (const uint8_t *) ("\x40\x4B\x01\xE2"), 4);
-      radio.write_register(0x01, (const uint8_t *) ("\xC0\x4B\x00\x00"), 4);
-      radio.write_register(0x02, (const uint8_t *) ("\xD0\xFC\x8C\x02"), 4);
-      radio.write_register(0x03, (const uint8_t *) ("\xF9\x00\x39\x21"), 4);
-      radio.write_register(0x04, (const uint8_t *) ("\xC1\x96\x9A\x1B"), 4);
-      radio.write_register(0x05, (const uint8_t *) ("\x24\x06\x7F\xA6"), 4);
+      radio.write_register(0x00, (const uint8_t *) (("\x40\x4B\x01\xE2")), 4);
+      radio.write_register(0x01, (const uint8_t *) (("\xC0\x4B\x00\x00")), 4);
+      radio.write_register(0x02, (const uint8_t *) (("\xD0\xFC\x8C\x02")), 4);
+      radio.write_register(0x03, (const uint8_t *) (("\xF9\x00\x39\x21")), 4);
+      radio.write_register(0x04, (const uint8_t *) (("\xC1\x96\x9A\x1B")), 4);
+      radio.write_register(0x05, (const uint8_t *) (("\x24\x06\x7F\xA6")), 4);
       radio.write_register(0x06, (const uint8_t *) &nul, 4);
       radio.write_register(0x07, (const uint8_t *) &nul, 4);
       radio.write_register(0x08, (const uint8_t *) &nul, 4);
       radio.write_register(0x09, (const uint8_t *) &nul, 4);
       radio.write_register(0x0A, (const uint8_t *) &nul, 4);
       radio.write_register(0x0B, (const uint8_t *) &nul, 4);
-      radio.write_register(0x0C, (const uint8_t *) ("\x00\x12\x73\x00"), 4);
-      radio.write_register(0x0D, (const uint8_t *) ("\x46\xB4\x80\x00"), 4);
-      radio.write_register(0x0E, (const uint8_t *) ("\x41\x10\x04\x82\x20\x08\x08\xF2\x7D\xEF\xFF"), 11);
-      radio.write_register(0x04, (const uint8_t *) ("\xC7\x96\x9A\x1B"), 4);
-      radio.write_register(0x04, (const uint8_t *) ("\xC1\x96\x9A\x1B"), 4);
+      radio.write_register(0x0C, (const uint8_t *) (("\x00\x12\x73\x00")), 4);
+      radio.write_register(0x0D, (const uint8_t *) (("\x46\xB4\x80\x00")), 4);
+      radio.write_register(0x0E, (const uint8_t *) (("\x41\x10\x04\x82\x20\x08\x08\xF2\x7D\xEF\xFF")), 11);
+      radio.write_register(0x04, (const uint8_t *) (("\xC7\x96\x9A\x1B")), 4);
+      radio.write_register(0x04, (const uint8_t *) (("\xC1\x96\x9A\x1B")), 4);
     }
     radio.activate(0x53); // switch bank back
   }
@@ -104,13 +104,14 @@ void MjxRx::begin()
 }
 
 static uint64_t prev_tm;
-static uint64_t dump_tm;
+;
 
-void MjxRx::update(MjxControls& ctrl)
+void MjxRx::update(MjxModel& model)
 {
   uint64_t now = millis();
   uint8_t buf[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   boolean update = false;
+  static uint64_t dump_tm = 0;
   
   if(radio.available())
   {
@@ -133,7 +134,7 @@ void MjxRx::update(MjxControls& ctrl)
     radio.write_register(RF_CH, next_ch);
 
     // dump data
-    if(false && now - dump_tm > 5000)
+    if(false && now - dump_tm > 1000)
     {
       Serial.print(F("D: ")); serial_dump(buf, sizeof(buf));
       //Serial.print(F(", B: ")); Serial.print(bound);
@@ -160,7 +161,7 @@ void MjxRx::update(MjxControls& ctrl)
     prev_tm = now;
     update = true;
   }
-  if(update) ctrl = getControls();
+  if(update) model.updateInput(getInput());
 }
 
 void MjxRx::hoopChannel()
@@ -200,7 +201,7 @@ void MjxRx::bindTx()
   Serial.print(F(", inc: "));
   Serial.print(increment, HEX);
   Serial.println();
-
+  
   const uint8_t (&work_row)[16] = freq_hopping[table];
   //const uint8_t (&bind_row)[16] = freq_hopping[0];
   
@@ -219,13 +220,14 @@ void MjxRx::bindTx()
 
   bound = true;
   
+  /*
   Serial.print(F(" * Bind Channels: "));
   for (int i = 0; i < 16; ++i)
   {
     Serial.print(rf_channels_bind[i], HEX);
     Serial.print(F(", "));
   }
-  Serial.println("");
+  Serial.println();
   
   Serial.print(F(" * Work Channels: "));
   for (int i = 0; i < 16; ++i)
@@ -234,7 +236,7 @@ void MjxRx::bindTx()
     Serial.print(F(", "));
   }
   Serial.println();
-
+  */
   Serial.println(F(" * Binding done"));
 }
 

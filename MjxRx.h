@@ -3,23 +3,7 @@
 
 #include "Arduino.h"
 #include "nRF24L01.h"
-
-class MjxControls
-{
-  public:
-    MjxControls():
-      throttle(0), yaw(0), pitch(0), roll(0), yaw_trim(0x40), pitch_trim(0x40), roll_trim(0x40), flags(0) {}
-    MjxControls(uint8_t throttle_, uint8_t yaw_, uint8_t pitch_, uint8_t roll_, uint8_t yaw_trim_, uint8_t pitch_trim_, uint8_t roll_trim_, uint8_t flags_):
-      throttle(throttle_), yaw(yaw_), pitch(pitch_), roll(roll_), yaw_trim(yaw_trim_), pitch_trim(pitch_trim_), roll_trim(roll_trim_), flags(flags_) {}
-    uint8_t throttle;
-    uint8_t yaw;
-    uint8_t pitch; 
-    uint8_t roll;
-    uint8_t yaw_trim;
-    uint8_t pitch_trim;
-    uint8_t roll_trim;
-    uint8_t flags;
-};
+#include "MjxModel.h"
 
 class MjxRx
 {
@@ -31,9 +15,9 @@ class MjxRx
       FLAGS = 14, SUM 
     } data_index_t;
     
-    MjxRx(nRF24& radio_);
+    MjxRx(uint8_t ce_pin, uint8_t cs_pin);
     void begin();
-    void update(MjxControls& ctrl);
+    void update(MjxModel& model);
     
     uint8_t getThrottle()   const { return data[THROTTLE]; }
     uint8_t getYaw()        const { return data[YAW]; }
@@ -44,9 +28,10 @@ class MjxRx
     uint8_t getRollTrim()   const { return data[ROLL_TRIM]; }
     uint8_t getFlags()      const { return data[FLAGS]; }
     bool getBound()         const { return bound; }
-    MjxControls getControls() const
+    
+    MjxInput getInput() const
     {
-      return MjxControls(getThrottle(), getYaw(), getPitch(), getRoll(), getYawTrim(), getPitchTrim(), getRollTrim(), getFlags());
+      return MjxInput(getThrottle(), getYaw(), getPitch(), getRoll(), getYawTrim(), getPitchTrim(), getRollTrim(), getFlags());
     }
     
   private:
@@ -54,7 +39,7 @@ class MjxRx
     void hoopChannel();
     bool isValid(const uint8_t data[16]);
 
-    nRF24&  radio;
+    nRF24  radio;
     uint8_t data[16];
     uint8_t rf_ch_num;
     uint8_t txid[3];

@@ -24,7 +24,7 @@ const uint8_t MjxRx::freq_hopping[4][16] = {
  { 0x22, 0x27, 0x17, 0x39, 0x34, 0x28, 0x2B, 0x1D, 0x18, 0x2A, 0x21, 0x38, 0x10, 0x26, 0x20, 0x1F }   //  03 - TX sends actual packets using THIS ONE !
 };
 
-MjxRx::MjxRx(uint8_t ce_pin, uint8_t cs_pin): radio(ce_pin, cs_pin)
+MjxRx::MjxRx(MjxModel& m): model(m), radio(model.config.radio_ce_pin, model.config.radio_csn_pin)
 {
   for(size_t i = 0; i < sizeof(data); i++) data[i] = 0;
 }
@@ -106,7 +106,7 @@ void MjxRx::begin()
 static uint64_t prev_tm;
 ;
 
-void MjxRx::update(MjxModel& model)
+void MjxRx::update()
 {
   uint64_t now = millis();
   uint8_t buf[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

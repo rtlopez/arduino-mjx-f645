@@ -1,7 +1,7 @@
 #include "MjxServo.h"
 
-MjxServo::MjxServo():
-  _current(0), _target(0), _speed(0), _ts(0)
+MjxServo::MjxServo(unsigned int interval):
+  _current(0), _target(0), _speed(0), _ts(0), _interval(interval)
 {
   _ts = millis();
 }
@@ -43,7 +43,7 @@ void MjxServo::update()
 {
   unsigned long now = millis();
   unsigned long tm = now - _ts;
-  if(tm >= MJX_UPDATE_INTERVAL)
+  if(tm >= _interval)
   {
     if(_speed > 0)
     {

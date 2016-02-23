@@ -28,7 +28,6 @@ MjxPID::MjxPID(double* Input, double* Output, double* Setpoint, double Kp, doubl
   SetTunings(Kp, Ki, Kd);
 
   lastTime = millis() - SampleTime;
-  debugTime = millis();
 }
  
  
@@ -46,17 +45,24 @@ bool MjxPID::Compute()
    if(timeChange >= SampleTime)
    {
       /*Compute all the working error variables*/
-      double error = *mySetpoint - *myInput;
+      error = *mySetpoint - *myInput;
+      double dInput = (*myInput - lastInput);
+      double dSetpoint = (*mySetpoint - lastSetpoint);
+
+      PTerm = kp * error;
+      FixPTerm();
 
       ITerm += (ki * error);
       FixITerm();
-      
-      double dInput = (*myInput - lastInput);
-      double dSetpoint = (*mySetpoint - lastSetpoint);
+
+      //DTerm = - kd * dInput;
+      DTerm = - kd * dInput + 0.005 * kd * dSetpoint;
+      FixDTerm();
  
       /*Compute PID Output*/
       //*myOutput = kp * error + ITerm - kd * dInput;
-      *myOutput = kp * error + ITerm - kd * dInput + 0.005 * kd * dSetpoint;
+      //*myOutput = kp * error + ITerm - kd * dInput + 0.005 * kd * dSetpoint;
+      *myOutput = PTerm + ITerm + DTerm;
       FixOutput();
 	  
       /*Remember some variables for next time*/
@@ -71,15 +77,28 @@ bool MjxPID::Compute()
 
 void MjxPID::FixITerm()
 {
-    if(ITerm > outMax * outIRate) ITerm = outMax * outIRate;
-    else if(ITerm < outMin * outIRate) ITerm = outMin * outIRate;
+  if(ITerm > outMax * outIRate) ITerm = outMax * outIRate;
+  else if(ITerm < outMin * outIRate) ITerm = outMin * outIRate;
+}
+
+void MjxPID::FixPTerm()
+{
+  if(PTerm > outMax * outIRate) PTerm = outMax * outIRate;
+  else if(PTerm < outMin * outIRate) PTerm = outMin * outIRate;
+}
+
+void MjxPID::FixDTerm()
+{
+  if(DTerm > outMax * outIRate) DTerm = outMax * outIRate;
+  else if(DTerm < outMin * outIRate) DTerm = outMin * outIRate;
 }
 
 void MjxPID::FixOutput()
 {
-    if(*myOutput > outMax) *myOutput = outMax;
-    else if(*myOutput < outMin) *myOutput = outMin;
+  if(*myOutput > outMax) *myOutput = outMax;
+  else if(*myOutput < outMin) *myOutput = outMin;
 }
+
 /* SetTunings(...)*************************************************************
  * This function allows the controller's dynamic performance to be adjusted. 
  * it's called automatically from the constructor, but tunings can also
@@ -133,7 +152,9 @@ void MjxPID::SetOutputLimits(double Min, double Max, double iRate)
     outIRate = iRate;
     if(inAuto)
     {
+      FixPTerm();
       FixITerm();
+      FixDTerm();
       FixOutput();
     }
 }
@@ -163,7 +184,10 @@ void MjxPID::Initialize()
     ITerm = *myOutput;
     lastInput = *myInput;
     lastSetpoint = *mySetpoint;
+    FixPTerm();
     FixITerm();
+    FixDTerm();
+    FixOutput();
 }
 
 /* SetControllerDirection(...)*************************************************

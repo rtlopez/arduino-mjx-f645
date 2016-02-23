@@ -13,10 +13,11 @@
 class MjxPosition
 {
   public:
-    MjxPosition(): imu(&settings) {}
+    MjxPosition(MjxModel& m);
     void begin();
-    void update(MjxModel& model);
+    void update();
   private:
+    MjxModel& model;
     RTIMUSettings settings;                               // the settings object
     RTIMUMPU9150 imu;                                     // the IMU object
     RTFusionRTQF fusion;                                  // the fusion object    

@@ -2,22 +2,24 @@
 #define MjxController_h
 
 #include "MjxConfig.h"
-#include "MjxRx.h"
-#include "MjxPosition.h"
 #include "MjxPID.h"
 #include "MjxServo.h"
+#include "MjxModel.h"
+#include "MjxTelemetry.h"
 
 #include <Servo.h>
 
 class MjxController
 {
   public:
-    MjxController(int throttle_pin, int yaw_pin, int pitch_pin, int roll_pin);
+    MjxController(const MjxModel& m, MjxTelemetry& t);
     void begin();
     void update();
-    void update(const MjxModel& model);
+    void execute();
+    void output();
   private:
-    uint8_t throttle_pin, yaw_pin, pitch_pin, roll_pin;
+    const MjxModel& model;
+    MjxTelemetry& telemetry;
     double throttle_in, yaw_in, pitch_in, roll_in;
     double throttle_out, yaw_out, pitch_out, roll_out;
     double yaw_gyro, pitch_gyro, roll_gyro;

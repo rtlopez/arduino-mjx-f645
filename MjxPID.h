@@ -1,6 +1,8 @@
 #ifndef MjxPID_h
 #define MjxPID_h
 
+#include "Arduino.h"
+
 class MjxPID
 {
   public:
@@ -48,31 +50,39 @@ class MjxPID
   	double GetKd();						  // where it's important to know what is actually 
   	int GetMode();						  //  inside the PID.
   	int GetDirection();				  //
-
+    
+    double getP() const { return PTerm; }
+    double getI() const { return ITerm; }
+    double getD() const { return DTerm; }
+    double getError() const { return error; }
+    double getInput() const { return *myInput; }
+    double getOutput() const { return *myOutput; }
+    double getSetpoint() const { return *mySetpoint; }
+    
   private:
   	void Initialize();
     
+    void FixPTerm();
     void FixITerm();
+    void FixDTerm();
     void FixOutput();
   	
-  	double dispKp;				// * we'll hold on to the tuning parameters in user-entered 
-  	double dispKi;				//   format for display purposes
-  	double dispKd;				//
+  	double dispKp;				      // * we'll hold on to the tuning parameters in user-entered 
+  	double dispKi;				      //   format for display purposes
+  	double dispKd;				      //
       
   	double kp;                  // * (P)roportional Tuning Parameter
     double ki;                  // * (I)ntegral Tuning Parameter
     double kd;                  // * (D)erivative Tuning Parameter
-  
   	int controllerDirection;
   
     double *myInput;              // * Pointers to the Input, Output, and Setpoint variables
     double *myOutput;             //   This creates a hard link between the variables and the 
     double *mySetpoint;           //   PID, freeing the user from having to constantly tell us
                                   //   what these values are.  with pointers we'll just know.
-  	unsigned long lastTime, debugTime;
-  	double ITerm, lastInput, lastSetpoint;
+  	unsigned long long lastTime,  SampleTime;
+  	double error, PTerm, ITerm, DTerm, lastInput, lastSetpoint;
   
-  	unsigned long SampleTime;
   	double outMin, outMax, outIRate;
   	bool inAuto;
 };

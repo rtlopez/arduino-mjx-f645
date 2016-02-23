@@ -10,8 +10,14 @@ class MjxProfiler
   public:
     MjxProfiler(const char * name_, tm_t interval_): 
       name(name_), display_ts(0), display_int(interval_), start_ts(0), now_ts(0), sum_ts(0), count(0), min_ts(-1), max_ts(-1) {}
-    void start() { now_ts = start_ts = micros(); }
-    void stop() {
+      
+    void start()
+    {
+      now_ts = start_ts = micros();
+    }
+    
+    void stop()
+    {
       now_ts = micros();
       tm_t diff_ts = now_ts - start_ts;
       sum_ts += diff_ts;
@@ -22,7 +28,9 @@ class MjxProfiler
       max_ts = max(max_ts, diff_ts);
       dump();
     }
-    void dump() {
+    
+    void dump()
+    {
       if(!display_int || !count || !start_ts || !now_ts) return;
       if(now_ts - display_ts > display_int * 1000)
       {

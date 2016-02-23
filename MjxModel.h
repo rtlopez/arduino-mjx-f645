@@ -1,6 +1,7 @@
 #ifndef MjxModel_h
 #define MjxModel_h
 
+#include "Arduino.h"
 #include "MjxConfig.h"
 #include "RTMath.h"
 
@@ -33,7 +34,9 @@ class MjxModel
     void updateInput(const MjxInput& value) { input = value; }
     void updateGyro(const RTVector3& value) { gyro = value; }
     void updatePose(const RTVector3& value) { pose = value; }
-    
+  
+    MjxConfig config;
+  
   private:
     MjxInput input;
     RTVector3 gyro;

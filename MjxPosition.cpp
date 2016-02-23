@@ -1,13 +1,17 @@
 #include "MjxPosition.h"
 
-void MjxPosition::begin()
+MjxPosition::MjxPosition(MjxModel& m): model(m), imu(&settings)
 {
   settings.m_MPU9150GyroFsr = MPU9150_GYROFSR_2000;         // degr/sec: 250,500,1000,2000
   settings.m_MPU9150AccelFsr = MPU9150_ACCELFSR_8;          // G:        2,4,8,16
-  settings.m_MPU9150GyroAccelLpf = MPU9150_LPF_20;          // Hz:       5|10|20|42,98,188,256
+  settings.m_MPU9150GyroAccelLpf = MPU9150_LPF_10;          // Hz:       5|10|20|42,98,188,256
   settings.m_MPU9150GyroAccelSampleRate = 50;
   settings.m_MPU9150CompassSampleRate = 50;
+}
 
+void MjxPosition::begin()
+{
+  Wire.begin();
   Serial.print(F(" * Mjx IMU starting: ")); Serial.println(imu.IMUName());
   int errcode;
   if((errcode = imu.IMUInit()) < 0)
@@ -25,7 +29,7 @@ void MjxPosition::begin()
   fusion.setCompassEnable(true);
 }
 
-void MjxPosition::update(MjxModel& model)
+void MjxPosition::update()
 {
   int loopCount = 0;
   while(imu.IMURead())

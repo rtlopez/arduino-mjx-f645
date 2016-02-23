@@ -15,9 +15,9 @@ class MjxRx
       FLAGS = 14, SUM 
     } data_index_t;
     
-    MjxRx(uint8_t ce_pin, uint8_t cs_pin);
+    MjxRx(MjxModel& m);
     void begin();
-    void update(MjxModel& model);
+    void update();
     
     uint8_t getThrottle()   const { return data[THROTTLE]; }
     uint8_t getYaw()        const { return data[YAW]; }
@@ -39,6 +39,7 @@ class MjxRx
     void hoopChannel();
     bool isValid(const uint8_t data[16]);
 
+    MjxModel& model;
     nRF24  radio;
     uint8_t data[16];
     uint8_t rf_ch_num;

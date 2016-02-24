@@ -1,7 +1,6 @@
 #ifndef MjxController_h
 #define MjxController_h
 
-#include "MjxConfig.h"
 #include "MjxPID.h"
 #include "MjxServo.h"
 #include "MjxModel.h"

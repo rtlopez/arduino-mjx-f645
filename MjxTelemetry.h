@@ -8,9 +8,7 @@ class MjxTelemetry
 {
   public:
     MjxTelemetry(MjxModel& m);
-
     void print(double val, uint32_t flags);
-   
     void reset();
     
   private:

@@ -20,7 +20,7 @@ class MjxConfig
   public:
     MjxConfig(): 
       dump_ts(0), 
-      dump_flags(MJX_DUMP_Z | MJX_DUMP_IN | MJX_DUMP_OUT | MJX_DUMP_GYRO | MJX_DUMP_POSE),
+      dump_flags(MJX_DUMP_T | MJX_DUMP_X | MJX_DUMP_Y | MJX_DUMP_Z | MJX_DUMP_IN | MJX_DUMP_OUT | MJX_DUMP_GYRO | MJX_DUMP_POSE | MJX_DUMP_PID),
       dump_interval(60),
       update_interval(20),
       radio_ce_pin(8),

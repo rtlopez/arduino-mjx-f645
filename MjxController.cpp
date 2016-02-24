@@ -1,9 +1,5 @@
 #include "MjxController.h"
-
-float mapf(double x, double in_min, double in_max, double out_min, double out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
+#include "libs/Tools.h"
 
 MjxController::MjxController(const MjxModel& m, MjxTelemetry& t):
   model(m), telemetry(t),
@@ -41,7 +37,7 @@ void MjxController::begin()
 
   // init PID controllers
   yaw_pid.SetMode(AUTOMATIC);
-  yaw_pid.SetOutputLimits(0, 180, 0.5);
+  yaw_pid.SetOutputLimits(8, 180, 0.5);
   yaw_pid.SetSampleTime(model.config.update_interval);
 }
 
@@ -56,47 +52,32 @@ void MjxController::update()
 
   // ################# decode and adjust input ################# //
   throttle_in = input.throttle;
-
   yaw_in = input.yaw;
-  if(input.yaw >= 0x80) yaw_in = 0x80 - input.yaw;
-  yaw_in *= -180.0/127.0;
-  
   pitch_in = input.pitch;
-  if(input.pitch >= 0x80) pitch_in = 0x80 - input.pitch;
-  //pitch_in *= -1.0;
-
   roll_in = input.roll;
-  if(input.roll >= 0x80) roll_in = 0x80 - input.roll;
-  roll_in *= -1.0;
 
   // add trimming offsets
-  //yaw_in += input.yaw_trim - 64;
-  //pitch_in += input.pitch_trim - 64;
-  //roll_in += input.roll_trim - 64;
+  //yaw_in += input.yaw_trim;
+  //pitch_in += input.pitch_trim;
+  //roll_in += input.roll_trim;
 
-  // ################# calculate output ####################### //
-  const double loFrom = -127.0 - 64.0;
-  const double hiFrom = -loFrom;
-  const double loTo = 0.0;
-  const double hiTo = 180.0;
-  
-  throttle_out = mapf(throttle_in, 0, 255, loTo, hiTo);
-  pitch_out = mapf(pitch_in, loFrom, hiFrom, loTo, hiTo);
-  roll_out = mapf(roll_in, loFrom, hiFrom, loTo, hiTo);
-  //yaw_out = mapf(yaw_in, loFrom, hiFrom, loTo, hiTo);
+  // ################# calculate output ####################### // 
+  throttle_out = map(throttle_in, 0, 255, 0, 180);
+  pitch_out    = map(pitch_in, -190, 190, 0, 180);
+  roll_out     = map(roll_in,  -190, 190, 0, 180);
   
   // ################# tuning ################# //
   //double yaw_kp = 0.15;
-  double yaw_kp = mapf(input.roll_trim, 1, 127, 0, model.config.yaw_pid_kp);      // 0.15
+  double yaw_kp = Tools::map(input.roll_trim, -64.0, 64.0, 0.0, model.config.yaw_pid_kp);      // 0.15
   
   //double yaw_ki = 0.35;
-  double yaw_ki = mapf(input.yaw_trim, 1, 127, 0, model.config.yaw_pid_ki);       // 0.35
+  double yaw_ki = Tools::map(input.yaw_trim, -64.0, 64.0, 0.0, model.config.yaw_pid_ki);       // 0.35
   
-  //double yaw_kd = 0.05
-  double yaw_kd = mapf(input.pitch_trim, 1, 127, 0, model.config.yaw_pid_kd);     // 0.05
+  //double yaw_kd = 0.05;
+  double yaw_kd = Tools::map(input.pitch_trim, -64.0, 64.0, 0.0, model.config.yaw_pid_kd);     // 0.05
 
-  double yaw_gyro_rate = 0.1;                                                       // 0.1
-  //double yaw_gyro_rate = mapf(input.roll_trim, 1, 127, 0, 0.05);  // 0.05
+  double yaw_gyro_rate = model.config.update_interval / 1000.0;                                // 0.05
+  //double yaw_gyro_rate = Tools::map(input.roll_trim, -1, 1, 0, 0.05);                        // 0.05
   
   yaw_gyro *= yaw_gyro_rate;
 
@@ -104,15 +85,6 @@ void MjxController::update()
   yaw_pid.SetTunings(yaw_kp, yaw_ki, yaw_kd);
   if(yaw_pid.Compute())
   {
-  
-    //yaw_out = mapf(yaw_out, 0, 127, loTo, hiTo);
-    //yaw_out = multiMap(yaw_out, yaw_map_in, yaw_map_out, sizeof(yaw_map_in));
-    
-    //if(input.flags == 0x10) // yaw manual mode
-    //{
-    //  yaw_out = yaw_in > 0 ? yaw_in : 0;
-    //}
-
     execute();
     output();
   }
@@ -133,7 +105,11 @@ void MjxController::execute()
 
 void MjxController::output()
 {
+  telemetry.print(throttle_in, MJX_DUMP_IN | MJX_DUMP_T);
+  telemetry.print(throttle_out, MJX_DUMP_OUT | MJX_DUMP_T);
   telemetry.print(yaw_in, MJX_DUMP_IN | MJX_DUMP_Z);
+  //telemetry.print(pitch_in, MJX_DUMP_IN | MJX_DUMP_X);
+  //telemetry.print(roll_in, MJX_DUMP_IN | MJX_DUMP_Y);
   telemetry.print(yaw_gyro, MJX_DUMP_GYRO | MJX_DUMP_Z);
   telemetry.print(yaw_out, MJX_DUMP_OUT | MJX_DUMP_Z);
 }

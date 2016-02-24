@@ -12,15 +12,15 @@ MjxPosition::MjxPosition(MjxModel& m): model(m), imu(&settings)
 void MjxPosition::begin()
 {
   Wire.begin();
-  Serial.print(F(" * Mjx IMU starting: ")); Serial.println(imu.IMUName());
+  Serial.print(F("IMU.start: ")); Serial.println(imu.IMUName());
   int errcode;
   if((errcode = imu.IMUInit()) < 0)
   {
-    Serial.print(F(" * Failed to init IMU: ")); Serial.println(errcode);
+    Serial.print(F("IMU.failed: ")); Serial.println(errcode);
     return;
   }
 
-  Serial.print(F(" * Compass calibration: "));
+  Serial.print(F("IMU.compas: "));
   Serial.println(imu.getCalibrationValid());
   
   fusion.setSlerpPower(0.02);

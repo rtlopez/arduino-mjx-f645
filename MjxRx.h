@@ -2,7 +2,7 @@
 #define MjxRx_h
 
 #include "Arduino.h"
-#include "nRF24L01.h"
+#include "libs/nRF24L01/nRF24L01.h"
 #include "MjxModel.h"
 
 class MjxRx
@@ -18,21 +18,7 @@ class MjxRx
     MjxRx(MjxModel& m);
     void begin();
     void update();
-    
-    uint8_t getThrottle()   const { return data[THROTTLE]; }
-    uint8_t getYaw()        const { return data[YAW]; }
-    uint8_t getPitch()      const { return data[PITCH]; }
-    uint8_t getRoll()       const { return data[ROLL]; }
-    uint8_t getYawTrim()    const { return data[YAW_TRIM]; }
-    uint8_t getPitchTrim()  const { return data[PITCH_TRIM]; }
-    uint8_t getRollTrim()   const { return data[ROLL_TRIM]; }
-    uint8_t getFlags()      const { return data[FLAGS]; }
-    bool getBound()         const { return bound; }
-    
-    MjxInput getInput() const
-    {
-      return MjxInput(getThrottle(), getYaw(), getPitch(), getRoll(), getYawTrim(), getPitchTrim(), getRollTrim(), getFlags());
-    }
+    MjxInput getInput() const;
     
   private:
     void bindTx();
@@ -46,6 +32,7 @@ class MjxRx
     uint8_t txid[3];
     uint8_t rf_channels_work[16];
     bool    bound;
+    uint64_t prev_tm;
     
     static const uint8_t rf_channels_bind[16];
     static const uint8_t freq_hopping[4][16];

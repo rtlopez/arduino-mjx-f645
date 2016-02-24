@@ -1,6 +1,5 @@
 #include "MjxRx.h"
-
-void serial_dump(const uint8_t * buf, uint8_t len);
+#include "libs/Tools.h"
 
 const char * MjxRx::rx_tx_addr = "mjsss"; //{ 0x6D, 0x6A, 0x73, 0x73, 0x73 };
 const char * MjxRx::rx_p1_addr = "jm777"; //{ 0x6A, 0x6D, 0x37, 0x37, 0x37 };
@@ -29,9 +28,23 @@ MjxRx::MjxRx(MjxModel& m): model(m), radio(model.config.radio_ce_pin, model.conf
   for(size_t i = 0; i < sizeof(data); i++) data[i] = 0;
 }
 
+MjxInput MjxRx::getInput() const
+{ 
+  return MjxInput(
+    data[THROTTLE],
+    -(data[YAW]   >= 0x80 ? 0x80 - data[YAW]   : data[YAW]),
+    data[PITCH] >= 0x80 ? 0x80 - data[PITCH] : data[PITCH],
+    data[ROLL]  >= 0x80 ? 0x80 - data[ROLL]  : data[ROLL],
+    data[YAW_TRIM]   - 64,
+    data[PITCH_TRIM] - 64,
+    data[ROLL_TRIM]  - 64,
+    data[FLAGS]
+  );
+}
+
 void MjxRx::begin()
 {
-  Serial.println(F(" * Initialization MJX radio start"));
+  Serial.println(F("RX.begin.start"));
   radio.begin();
   radio.write_register(CONFIG, 0x0C);
   radio.write_register(EN_AA, 0x00);
@@ -100,18 +113,14 @@ void MjxRx::begin()
   radio.write_register(RF_CH, 0x1B); // ??
   radio.write_register(STATUS, 0x40);
   
-  Serial.println(F(" * Initialization MJX radio done"));
+  Serial.println(F("RX.begin.done"));
 }
-
-static uint64_t prev_tm;
-;
 
 void MjxRx::update()
 {
   uint64_t now = millis();
   uint8_t buf[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
   boolean update = false;
-  static uint64_t dump_tm = 0;
   
   if(radio.available())
   {
@@ -125,25 +134,13 @@ void MjxRx::update()
     if(valid)
     {
       for(size_t i = 0; i < sizeof(data); i++) data[i] = buf[i];
-      if(!bound && getFlags() == 0xC0) bindTx();
+      if(!bound && data[FLAGS] == 0xC0) bindTx();
     }
 
     // follow channel hooping
     hoopChannel();
     uint8_t next_ch = bound ? rf_channels_work[rf_ch_num >> 1] : rf_channels_bind[rf_ch_num >> 1];
     radio.write_register(RF_CH, next_ch);
-
-    // dump data
-    if(false && now - dump_tm > 1000)
-    {
-      Serial.print(F("D: ")); serial_dump(buf, sizeof(buf));
-      //Serial.print(F(", B: ")); Serial.print(bound);
-      //Serial.print(F(", C: ")); Serial.print(channel, HEX);
-      //Serial.print(F(", V: ")); Serial.print(valid);
-      Serial.print(F(", T: ")); Serial.print((unsigned long)(now - prev_tm));
-      Serial.println();
-      dump_tm = now;
-    }
 
     prev_tm = now;
     update = true;
@@ -189,7 +186,7 @@ void MjxRx::bindTx()
   const uint8_t table = sum & 0x03;                    // Base row is defined by lowest 2 bits
   const uint8_t increment = (sum & 0x1C) >> 2;         // Higher 3 bits define increment to corresponding row
 
-  Serial.print(F(" * Binding start: "));
+  Serial.print(F("RX.bind.start: "));
   Serial.print(F("TX ID: "));
   Serial.print(txid[0], HEX);
   Serial.print(F(" "));
@@ -203,33 +200,16 @@ void MjxRx::bindTx()
   Serial.println();
   
   const uint8_t (&work_row)[16] = freq_hopping[table];
-  //const uint8_t (&bind_row)[16] = freq_hopping[0];
-  
-  //uint8_t work[16];
-  //uint8_t bind[16];
-
   uint8_t val = 0;
   for (int i = 0; i < 16; ++i)
   {
     // Strange avoidance of channels divisible by 16
-    //val = bind_row[i];
-    //bind[i] = (val & 0x0f) ? val : val - 3;
     val = work_row[i] + increment;
     rf_channels_work[i] = (val & 0x0f) ? val : val - 3;
   }
-
-  bound = true;
   
   /*
-  Serial.print(F(" * Bind Channels: "));
-  for (int i = 0; i < 16; ++i)
-  {
-    Serial.print(rf_channels_bind[i], HEX);
-    Serial.print(F(", "));
-  }
-  Serial.println();
-  
-  Serial.print(F(" * Work Channels: "));
+  Serial.print(F("RX.channel: "));
   for (int i = 0; i < 16; ++i)
   {
     Serial.print(rf_channels_work[i], HEX);
@@ -237,14 +217,8 @@ void MjxRx::bindTx()
   }
   Serial.println();
   */
-  Serial.println(F(" * Binding done"));
+  Serial.println(F("RX.bind.done"));
+
+  bound = true;
 }
 
-void serial_dump(const uint8_t * buf, uint8_t len)
-{
-  for(uint8_t i = 0; i < len; i++)
-  {
-    if(i) Serial.print(F(" "));
-    Serial.print(buf[i], HEX);
-  }
-}

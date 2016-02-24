@@ -21,7 +21,7 @@ class MjxConfig
     MjxConfig(): 
       dump_ts(0), 
       dump_flags(MJX_DUMP_T | MJX_DUMP_X | MJX_DUMP_Y | MJX_DUMP_Z | MJX_DUMP_IN | MJX_DUMP_OUT | MJX_DUMP_GYRO | MJX_DUMP_POSE | MJX_DUMP_PID),
-      dump_interval(60),
+      dump_interval(40),
       update_interval(20),
       radio_ce_pin(8),
       radio_csn_pin(7),
@@ -29,9 +29,9 @@ class MjxConfig
       yaw_pin(5),
       pitch_pin(10),
       roll_pin(9),
-      yaw_pid_kp(1.0),
-      yaw_pid_ki(0.4),
-      yaw_pid_kd(0.15)
+      yaw_pid_kp(0.15 * 2),
+      yaw_pid_ki(0.35 * 2),
+      yaw_pid_kd(0.05 * 2)
       {}
       
     uint32_t dump_ts;         // telemetry last dump timestamp

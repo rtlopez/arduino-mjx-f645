@@ -37,7 +37,7 @@ void MjxController::begin()
 
   // init PID controllers
   yaw_pid.SetMode(AUTOMATIC);
-  yaw_pid.SetOutputLimits(8, 180, 0.5);
+  yaw_pid.SetOutputLimits(3, 180, 0.5);
   yaw_pid.SetSampleTime(model.config.update_interval);
 }
 
@@ -62,9 +62,9 @@ void MjxController::update()
   //roll_in += input.roll_trim;
 
   // ################# calculate output ####################### // 
-  throttle_out = map(throttle_in, 0, 255, 0, 180);
-  pitch_out    = map(pitch_in, -190, 190, 0, 180);
-  roll_out     = map(roll_in,  -190, 190, 0, 180);
+  throttle_out = map(throttle_in, 0,  255, 0, 180);
+  pitch_out    = map(pitch_in, -255,  255, 0, 180);
+  roll_out     = map(roll_in,   255, -255, 0, 180);
   
   // ################# tuning ################# //
   //double yaw_kp = 0.15;
@@ -76,7 +76,8 @@ void MjxController::update()
   //double yaw_kd = 0.05;
   double yaw_kd = Tools::map(input.pitch_trim, -64.0, 64.0, 0.0, model.config.yaw_pid_kd);     // 0.05
 
-  double yaw_gyro_rate = model.config.update_interval / 1000.0;                                // 0.05
+  double yaw_gyro_rate = 50.0;
+  //double yaw_gyro_rate = model.config.update_interval / 1000.0;                              // 0.05
   //double yaw_gyro_rate = Tools::map(input.roll_trim, -1, 1, 0, 0.05);                        // 0.05
   
   yaw_gyro *= yaw_gyro_rate;
@@ -85,6 +86,14 @@ void MjxController::update()
   yaw_pid.SetTunings(yaw_kp, yaw_ki, yaw_kd);
   if(yaw_pid.Compute())
   {
+    //Serial.print(yaw_in); Serial.print(" ");
+    //Serial.print(yaw_gyro); Serial.print(" ");
+    //Serial.print(yaw_out); Serial.print(" ");
+    //Serial.print(yaw_pid.getError()); Serial.print(" ");
+    //Serial.print(yaw_kp); Serial.print(" ");
+    //Serial.print(yaw_ki); Serial.print(" ");
+    //Serial.print(yaw_kd); Serial.print(" ");
+    //Serial.println();
     execute();
     output();
   }
@@ -105,12 +114,13 @@ void MjxController::execute()
 
 void MjxController::output()
 {
-  telemetry.print(throttle_in, MJX_DUMP_IN | MJX_DUMP_T);
-  telemetry.print(throttle_out, MJX_DUMP_OUT | MJX_DUMP_T);
-  telemetry.print(yaw_in, MJX_DUMP_IN | MJX_DUMP_Z);
+  //telemetry.print(throttle_in, MJX_DUMP_IN | MJX_DUMP_T);
+  //telemetry.print(throttle_out, MJX_DUMP_OUT | MJX_DUMP_T);
+  //telemetry.print(yaw_in, MJX_DUMP_IN | MJX_DUMP_Z);
   //telemetry.print(pitch_in, MJX_DUMP_IN | MJX_DUMP_X);
   //telemetry.print(roll_in, MJX_DUMP_IN | MJX_DUMP_Y);
-  telemetry.print(yaw_gyro, MJX_DUMP_GYRO | MJX_DUMP_Z);
-  telemetry.print(yaw_out, MJX_DUMP_OUT | MJX_DUMP_Z);
+  //telemetry.print(yaw_gyro, MJX_DUMP_GYRO | MJX_DUMP_Z);
+  //telemetry.print(yaw_out, MJX_DUMP_OUT | MJX_DUMP_Z);
+  //telemetry.print(yaw_pid.getError(), MJX_DUMP_OUT | MJX_DUMP_Z);
 }
 

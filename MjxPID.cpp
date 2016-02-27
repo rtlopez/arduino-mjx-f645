@@ -56,7 +56,7 @@ bool MjxPID::Compute()
       FixITerm();
 
       //DTerm = - kd * dInput;
-      DTerm = - kd * dInput + 0.005 * kd * dSetpoint;
+      DTerm = - kd * dInput + 0.01 * kd * dSetpoint;
       FixDTerm();
  
       /*Compute PID Output*/
@@ -111,8 +111,8 @@ void MjxPID::SetTunings(double Kp, double Ki, double Kd)
    dispKp = Kp; dispKi = Ki; dispKd = Kd;
     
    kp = Kp;
-   ki = Ki * SampleTime / 1000.0;
-   kd = Kd / SampleTime / 1000.0;
+   ki = Ki * (SampleTime / 1000.0);
+   kd = Kd / (SampleTime / 1000.0);
  
    if(controllerDirection == REVERSE)
    {

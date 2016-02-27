@@ -6,7 +6,7 @@
 #include "libs/RTIMULib/RTIMUMPU9150.h"
 #include "libs/RTIMULib/RTIMUSettings.h"
 #include "libs/RTIMULib/RTMath.h"
-#include "libs/RTIMULib/RTFusionRTQF.h" 
+#include "libs/RTIMULib/RTFusionRTQF.h"
 #include "libs/CalLib/CalLib.h"
 #include "MjxModel.h"
 

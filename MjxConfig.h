@@ -29,9 +29,9 @@ class MjxConfig
       yaw_pin(5),
       pitch_pin(10),
       roll_pin(9),
-      yaw_pid_kp(0.15 * 2),
-      yaw_pid_ki(0.35 * 2),
-      yaw_pid_kd(0.05 * 2)
+      yaw_pid_kp(0.30),
+      yaw_pid_ki(0.60),
+      yaw_pid_kd(0.01)
       {}
       
     uint32_t dump_ts;         // telemetry last dump timestamp

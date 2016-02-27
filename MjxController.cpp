@@ -37,7 +37,7 @@ void MjxController::begin()
 
   // init PID controllers
   yaw_pid.SetMode(AUTOMATIC);
-  yaw_pid.SetOutputLimits(3, 180, 0.5);
+  yaw_pid.SetOutputLimits(0, 180, 0.6);
   yaw_pid.SetSampleTime(model.config.update_interval);
 }
 
@@ -76,7 +76,7 @@ void MjxController::update()
   //double yaw_kd = 0.05;
   double yaw_kd = Tools::map(input.pitch_trim, -64.0, 64.0, 0.0, model.config.yaw_pid_kd);     // 0.05
 
-  double yaw_gyro_rate = 50.0;
+  double yaw_gyro_rate = 40.0;
   //double yaw_gyro_rate = model.config.update_interval / 1000.0;                              // 0.05
   //double yaw_gyro_rate = Tools::map(input.roll_trim, -1, 1, 0, 0.05);                        // 0.05
   
@@ -89,6 +89,9 @@ void MjxController::update()
     //Serial.print(yaw_in); Serial.print(" ");
     //Serial.print(yaw_gyro); Serial.print(" ");
     //Serial.print(yaw_out); Serial.print(" ");
+    //Serial.print(yaw_pid.getP()); Serial.print(" ");
+    //Serial.print(yaw_pid.getI()); Serial.print(" ");
+    //Serial.print(yaw_pid.getD()); Serial.print(" ");
     //Serial.print(yaw_pid.getError()); Serial.print(" ");
     //Serial.print(yaw_kp); Serial.print(" ");
     //Serial.print(yaw_ki); Serial.print(" ");

@@ -26,7 +26,7 @@ void MjxPosition::begin()
   fusion.setSlerpPower(0.02);
   fusion.setGyroEnable(true);
   fusion.setAccelEnable(true);
-  fusion.setCompassEnable(true);
+  fusion.setCompassEnable(false);
 }
 
 void MjxPosition::update()

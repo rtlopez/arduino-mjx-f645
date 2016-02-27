@@ -28,11 +28,12 @@ class MjxModel
 {
   public:
     const MjxInput& getInput() const;
-    const RTVector3& getGyro() const;
-    const RTVector3& getPose() const;
-
     void updateInput(const MjxInput& value);
+
+    const RTVector3& getGyro() const;
     void updateGyro(const RTVector3& value);
+
+    const RTVector3& getPose() const;
     void updatePose(const RTVector3& value);
   
     MjxConfig config;

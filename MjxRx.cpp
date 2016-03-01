@@ -1,5 +1,4 @@
 #include "MjxRx.h"
-#include "libs/Tools.h"
 
 const char * MjxRx::rx_tx_addr = "mjsss"; //{ 0x6D, 0x6A, 0x73, 0x73, 0x73 };
 const char * MjxRx::rx_p1_addr = "jm777"; //{ 0x6A, 0x6D, 0x37, 0x37, 0x37 };
@@ -23,23 +22,8 @@ const uint8_t MjxRx::freq_hopping[4][16] = {
  { 0x22, 0x27, 0x17, 0x39, 0x34, 0x28, 0x2B, 0x1D, 0x18, 0x2A, 0x21, 0x38, 0x10, 0x26, 0x20, 0x1F }   //  03 - TX sends actual packets using THIS ONE !
 };
 
-MjxRx::MjxRx(MjxModel& m): model(m), radio(model.config.radio_ce_pin, model.config.radio_csn_pin)
+MjxRx::MjxRx(MjxModel& m): model(m), radio(model.getRadioCePin(), model.getRadioCsnPin())
 {
-  for(size_t i = 0; i < sizeof(data); i++) data[i] = 0;
-}
-
-MjxInput MjxRx::getInput() const
-{ 
-  return MjxInput(
-    data[THROTTLE],
-    data[YAW]   >= 0x80 ? 0x80 - data[YAW]   : data[YAW],
-    data[PITCH] >= 0x80 ? 0x80 - data[PITCH] : data[PITCH],
-    data[ROLL]  >= 0x80 ? 0x80 - data[ROLL]  : data[ROLL],
-    data[YAW_TRIM]   - 64,
-    data[PITCH_TRIM] - 64,
-    data[ROLL_TRIM]  - 64,
-    data[FLAGS]
-  );
 }
 
 void MjxRx::begin()
@@ -133,8 +117,7 @@ void MjxRx::update()
     bool valid = isValid(buf);
     if(valid)
     {
-      for(size_t i = 0; i < sizeof(data); i++) data[i] = buf[i];
-      if(!bound && data[FLAGS] == 0xC0) bindTx();
+      if(!bound && buf[FLAGS] == 0xC0) bindTx(buf);
     }
 
     // follow channel hooping
@@ -148,17 +131,26 @@ void MjxRx::update()
   if(now - prev_tm > 200)
   {
     hoopChannel();
-    data[THROTTLE] = 0;
-    data[ROLL] = 0;
-    data[PITCH] = 0;
-    data[YAW] = 0;
-    data[ROLL_TRIM] = 0x40;
-    data[PITCH_TRIM] = 0x40;
-    data[YAW_TRIM] = 0x40;
+    buf[THROTTLE] = 0;
+    buf[ROLL] = 0;
+    buf[PITCH] = 0;
+    buf[YAW] = 0;
+    buf[ROLL_TRIM] = 0x40;
+    buf[PITCH_TRIM] = 0x40;
+    buf[YAW_TRIM] = 0x40;
     prev_tm = now;
     update = true;
   }
-  if(update) model.updateInput(getInput());
+  if(update) model.updateInput(
+    buf[THROTTLE],
+    buf[YAW]   >= 0x80 ? 0x80 - buf[YAW]   : buf[YAW],
+    buf[PITCH] >= 0x80 ? 0x80 - buf[PITCH] : buf[PITCH],
+    buf[ROLL]  >= 0x80 ? 0x80 - buf[ROLL]  : buf[ROLL],
+    buf[YAW_TRIM]   - 64,
+    buf[PITCH_TRIM] - 64,
+    buf[ROLL_TRIM]  - 64,
+    buf[FLAGS]
+  );
 }
 
 void MjxRx::hoopChannel()
@@ -174,7 +166,7 @@ bool MjxRx::isValid(const uint8_t data[16])
   return data[SUM] == sum;
 }
 
-void MjxRx::bindTx()
+void MjxRx::bindTx(const uint8_t data[16])
 {
   if(bound) return;
   

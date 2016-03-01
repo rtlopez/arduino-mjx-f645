@@ -2,8 +2,8 @@
 #define MjxRx_h
 
 #include "Arduino.h"
-#include "libs/nRF24L01/nRF24L01.h"
 #include "MjxModel.h"
+#include "libs/nRF24L01/nRF24L01.h"
 
 class MjxRx
 {
@@ -18,16 +18,14 @@ class MjxRx
     MjxRx(MjxModel& m);
     void begin();
     void update();
-    MjxInput getInput() const;
     
   private:
-    void bindTx();
+    void bindTx(const uint8_t data[16]);
     void hoopChannel();
     bool isValid(const uint8_t data[16]);
 
     MjxModel& model;
     nRF24  radio;
-    uint8_t data[16];
     uint8_t rf_ch_num;
     uint8_t txid[3];
     uint8_t rf_channels_work[16];

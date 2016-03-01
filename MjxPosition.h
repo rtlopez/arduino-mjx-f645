@@ -2,13 +2,12 @@
 #define MjxPosition_h
 
 #include "Arduino.h"
+#include "MjxModel.h"
 #include "libs/RTIMULib/RTIMU.h"
 #include "libs/RTIMULib/RTIMUSettings.h"
-#include "libs/RTIMULib/RTMath.h"
 #include "libs/RTIMULib/RTIMUMPU9150.h"
 #include "libs/RTIMULib/RTFusionRTQF.h"
 #include "libs/CalLib/CalLib.h"
-#include "MjxModel.h"
 
 class MjxPosition
 {

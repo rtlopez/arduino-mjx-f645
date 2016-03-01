@@ -32,9 +32,6 @@ void MjxPosition::begin()
   prev_tm = millis();
 }
 
-static RTVector3 prevPose;
-static RTVector3 poseGyro;
-
 void MjxPosition::update()
 {
   int loopCount = 0;
@@ -45,10 +42,11 @@ void MjxPosition::update()
     fusion.newIMUData(imu.getGyro(), imu.getAccel(), imu.getCompass(), imu.getTimestamp());
     tm = imu.getTimestamp();
   }
-  if(loopCount && tm - prev_tm >= model.config.update_interval)
+  if(loopCount && tm - prev_tm >= model.getUpdateInterval())
   {
     float dt = tm - prev_tm / 1000.0;
-    model.updatePose(fusion.getFusionPose(), dt);
+    const RTVector3& pose = fusion.getFusionPose();
+    model.updatePose(pose.x(), pose.y(), pose.z(), dt);
     prev_tm = tm;
   }
 }

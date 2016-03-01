@@ -29,9 +29,7 @@ class MjxTelemetry
     }
 
   private:
-    
     MjxModel& model;
- 
 };
 
 #endif

@@ -5,7 +5,6 @@
 #include "libs/PID/PID.h"
 #include "MjxModel.h"
 #include "MjxTelemetry.h"
-
 #include <Servo.h>
 
 class MjxController
@@ -15,7 +14,6 @@ class MjxController
     void begin();
     void update();
     void execute();
-    void output();
   private:
     const MjxModel& model;
     MjxTelemetry& telemetry;

@@ -1,8 +1,8 @@
 #ifndef MjxController_h
 #define MjxController_h
 
-#include "MjxPID.h"
-#include "MjxServo.h"
+#include "Arduino.h"
+#include "libs/PID/PID.h"
 #include "MjxModel.h"
 #include "MjxTelemetry.h"
 
@@ -19,11 +19,13 @@ class MjxController
   private:
     const MjxModel& model;
     MjxTelemetry& telemetry;
-    double throttle_in, yaw_in, pitch_in, roll_in;
-    double throttle_out, yaw_out, pitch_out, roll_out;
-    double yaw_gyro, pitch_gyro, roll_gyro;
-    MjxPID yaw_pid;
-    MjxServo throttle_servo, yaw_servo, pitch_servo, roll_servo;
+    int16_t throttle_in, throttle_out;
+    double yaw_in, yaw_out;
+    int16_t pitch_in, pitch_out;
+    int16_t roll_in, roll_out;
+    double yaw_gyro;
+    PID yaw_pid;
+    Servo throttle_servo, yaw_servo, pitch_servo, roll_servo;
 };
 
 #endif

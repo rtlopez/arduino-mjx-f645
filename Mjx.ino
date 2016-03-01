@@ -28,6 +28,5 @@ void loop()
   receiver.update();            // update transmitter data
   positioner.update();          // update actual orientation
   controller.update();          // update servos and motors
-  telemetry.reset();            // update telemetry data
 }
 

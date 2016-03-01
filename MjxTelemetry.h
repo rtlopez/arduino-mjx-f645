@@ -8,15 +8,30 @@ class MjxTelemetry
 {
   public:
     MjxTelemetry(MjxModel& m);
-    void print(double val, uint32_t flags);
-    void reset();
+
+    template<typename T>
+    MjxTelemetry& operator<< (const T v)
+    {
+      Serial.print(v); Serial.print(" ");
+      return *this;
+    }
     
+    MjxTelemetry& operator<< (const double v)
+    {
+      Serial.print(v, 4); Serial.print(" ");
+      return *this;
+    }
+
+    MjxTelemetry& operator<< (const char* v)
+    {
+      Serial.print(v);
+      return *this;
+    }
+
   private:
-    bool ready(uint32_t flags) const;
     
     MjxModel& model;
-    uint32_t now;
-    bool flush;   
+ 
 };
 
 #endif

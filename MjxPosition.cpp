@@ -12,35 +12,43 @@ MjxPosition::MjxPosition(MjxModel& m): model(m), imu(&settings)
 void MjxPosition::begin()
 {
   Wire.begin();
-  Serial.print(F("IMU.start: ")); Serial.println(imu.IMUName());
+  Serial.print(F("IMU.start: ")); Serial.print(imu.IMUName());
+  Serial.println();
   int errcode;
   if((errcode = imu.IMUInit()) < 0)
   {
     Serial.print(F("IMU.failed: ")); Serial.println(errcode);
-    return;
+    while(true);
   }
 
-  Serial.print(F("IMU.compas: "));
-  Serial.println(imu.getCalibrationValid());
+  bool compas = imu.getCalibrationValid();
+  Serial.print(F("IMU.compas")); Serial.println(compas);
   
   fusion.setSlerpPower(0.02);
   fusion.setGyroEnable(true);
   fusion.setAccelEnable(true);
-  fusion.setCompassEnable(false);
+  fusion.setCompassEnable(compas);
+  
+  prev_tm = millis();
 }
+
+static RTVector3 prevPose;
+static RTVector3 poseGyro;
 
 void MjxPosition::update()
 {
   int loopCount = 0;
+  unsigned long long tm;
   while(imu.IMURead())
   {
-    ++loopCount;
-    if(loopCount >= 10) continue;
+    if(++loopCount >= 10) continue;
     fusion.newIMUData(imu.getGyro(), imu.getAccel(), imu.getCompass(), imu.getTimestamp());
-    model.updateGyro(imu.getGyro());
+    tm = imu.getTimestamp();
   }
-  if(loopCount)
+  if(loopCount && tm - prev_tm >= model.config.update_interval)
   {
-    model.updatePose(fusion.getFusionPose());
+    float dt = tm - prev_tm / 1000.0;
+    model.updatePose(fusion.getFusionPose(), dt);
+    prev_tm = tm;
   }
 }

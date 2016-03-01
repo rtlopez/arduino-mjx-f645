@@ -32,7 +32,7 @@ MjxInput MjxRx::getInput() const
 { 
   return MjxInput(
     data[THROTTLE],
-    -(data[YAW]   >= 0x80 ? 0x80 - data[YAW]   : data[YAW]),
+    data[YAW]   >= 0x80 ? 0x80 - data[YAW]   : data[YAW],
     data[PITCH] >= 0x80 ? 0x80 - data[PITCH] : data[PITCH],
     data[ROLL]  >= 0x80 ? 0x80 - data[ROLL]  : data[ROLL],
     data[YAW_TRIM]   - 64,

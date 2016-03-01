@@ -1,9 +1,9 @@
-#ifndef MjxPID_h
-#define MjxPID_h
+#ifndef PID_h
+#define PID_h
 
 #include "Arduino.h"
 
-class MjxPID
+class PID
 {
   public:
     //Constants used in some of the functions below
@@ -13,7 +13,7 @@ class MjxPID
     #define REVERSE  1
   
     //commonly used functions **************************************************************************
-    MjxPID(double* Input, double* Output, double* Setpoint, double Kp, double Ki, double Kd, int ControllerDirection);     
+    PID(double* Input, double* Output, double* Setpoint, double Kp, double Ki, double Kd, int ControllerDirection);     
                                           // * constructor.  links the PID to the Input, Output, and 
                                           //   Setpoint.  Initial tuning parameters are also set here
 	
@@ -62,10 +62,11 @@ class MjxPID
   private:
   	void Initialize();
     
-    void FixPTerm();
-    void FixITerm();
-    void FixDTerm();
-    void FixOutput();
+    void LimitPTerm();
+    void LimitITerm();
+    void LimitDTerm();
+    void LimitOutput();
+    double ApplyLimit(double v, double min, double max);
   	
   	double dispKp;				      // * we'll hold on to the tuning parameters in user-entered 
   	double dispKi;				      //   format for display purposes
@@ -80,10 +81,10 @@ class MjxPID
     double *myOutput;             //   This creates a hard link between the variables and the 
     double *mySetpoint;           //   PID, freeing the user from having to constantly tell us
                                   //   what these values are.  with pointers we'll just know.
-  	unsigned long long lastTime,  SampleTime;
+  	unsigned long long lastTime, SampleTime;
   	double error, PTerm, ITerm, DTerm, lastInput, lastSetpoint;
   
-  	double outMin, outMax, outIRate;
+  	double outMin, outMax, outRate;
   	bool inAuto;
 };
 #endif

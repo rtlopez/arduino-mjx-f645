@@ -3,41 +3,27 @@
 
 MjxController::MjxController(const MjxModel& m, MjxTelemetry& t):
   model(m), telemetry(t),
-  yaw_pid(&yaw_gyro, &yaw_out, &yaw_in, 1, 0, 0, DIRECT),
-  throttle_servo(model.config.update_interval), yaw_servo(model.config.update_interval), pitch_servo(model.config.update_interval), roll_servo(model.config.update_interval)
-{
-  throttle_in = 0;
-  yaw_in = 0;
-  pitch_in = 0;
-  roll_in = 0; 
-
-  throttle_out = 0;
-  yaw_out = 0;
-  pitch_out = 90;
-  roll_out = 90;
-
-  yaw_gyro = 0;
-  pitch_gyro = 0;
-  roll_gyro = 0; 
-}
+  throttle_in(0), throttle_out(model.config.motor_pwm_min), 
+  yaw_in(0), yaw_out(model.config.motor_pwm_min),
+  pitch_in(0), pitch_out((model.config.servo_pwm_min + model.config.servo_pwm_max) / 2),
+  roll_in(0), roll_out((model.config.servo_pwm_min + model.config.servo_pwm_max) / 2),
+  yaw_gyro(0.0), yaw_pid(&yaw_gyro, &yaw_out, &yaw_in, 1, 0, 0, DIRECT)
+{}
 
 void MjxController::begin()
 {
   // attach servos
-  throttle_servo.attach(model.config.throttle_pin, 1000, 2000);
-  yaw_servo.attach(model.config.yaw_pin, 1000, 2000);
-  pitch_servo.attach(model.config.pitch_pin, 1000, 2000);
-  roll_servo.attach(model.config.roll_pin, 1000, 2000);
+  throttle_servo.attach(model.config.throttle_pin, model.config.motor_pwm_min, model.config.motor_pwm_max);
+  yaw_servo.attach(model.config.yaw_pin, model.config.motor_pwm_min, model.config.motor_pwm_max);
+  pitch_servo.attach(model.config.pitch_pin, model.config.servo_pwm_min, model.config.servo_pwm_max);
+  roll_servo.attach(model.config.roll_pin, model.config.servo_pwm_min, model.config.servo_pwm_max);
 
   // write initial values
-  throttle_servo.write(throttle_out, true);
-  yaw_servo.write(yaw_out, true);
-  pitch_servo.write(pitch_out, true);
-  roll_servo.write(roll_out, true);
+  execute();
 
   // init PID controllers
   yaw_pid.SetMode(AUTOMATIC);
-  yaw_pid.SetOutputLimits(0, 180, 0.6);
+  yaw_pid.SetOutputLimits(0, model.config.motor_pwm_max - model.config.motor_pwm_min, 0.3);
   yaw_pid.SetSampleTime(model.config.update_interval);
 }
 
@@ -47,13 +33,11 @@ void MjxController::update()
   const RTVector3 gyro = model.getGyro();
 
   yaw_gyro   = gyro.z();
-  pitch_gyro = gyro.x();
-  roll_gyro  = gyro.y();
 
   // ################# decode and adjust input ################# //
   throttle_in = input.throttle;
-  yaw_in = input.yaw;
-  pitch_in = input.pitch;
+  yaw_in = -input.yaw;
+  pitch_in = -input.pitch;
   roll_in = input.roll;
 
   // add trimming offsets
@@ -62,9 +46,9 @@ void MjxController::update()
   //roll_in += input.roll_trim;
 
   // ################# calculate output ####################### // 
-  throttle_out = map(throttle_in, 0,  255, 0, 180);
-  pitch_out    = map(pitch_in, -255,  255, 0, 180);
-  roll_out     = map(roll_in,   255, -255, 0, 180);
+  throttle_out = map(throttle_in, 0,  255, model.config.motor_pwm_min, model.config.motor_pwm_max);
+  pitch_out    = map(pitch_in,  255, -255, model.config.servo_pwm_min, model.config.servo_pwm_max);
+  roll_out     = map(roll_in,   255, -255, model.config.servo_pwm_min, model.config.servo_pwm_max);
   
   // ################# tuning ################# //
   //double yaw_kp = 0.15;
@@ -77,26 +61,19 @@ void MjxController::update()
   double yaw_kd = Tools::map(input.pitch_trim, -64.0, 64.0, 0.0, model.config.yaw_pid_kd);     // 0.05
 
   double yaw_gyro_rate = 40.0;
-  //double yaw_gyro_rate = model.config.update_interval / 1000.0;                              // 0.05
-  //double yaw_gyro_rate = Tools::map(input.roll_trim, -1, 1, 0, 0.05);                        // 0.05
-  
   yaw_gyro *= yaw_gyro_rate;
 
   // ################# Compute PID ################# //
   yaw_pid.SetTunings(yaw_kp, yaw_ki, yaw_kd);
   if(yaw_pid.Compute())
   {
+    yaw_out += model.config.motor_pwm_min;
+
     //Serial.print(yaw_in); Serial.print(" ");
     //Serial.print(yaw_gyro); Serial.print(" ");
-    //Serial.print(yaw_out); Serial.print(" ");
-    //Serial.print(yaw_pid.getP()); Serial.print(" ");
-    //Serial.print(yaw_pid.getI()); Serial.print(" ");
-    //Serial.print(yaw_pid.getD()); Serial.print(" ");
-    //Serial.print(yaw_pid.getError()); Serial.print(" ");
-    //Serial.print(yaw_kp); Serial.print(" ");
-    //Serial.print(yaw_ki); Serial.print(" ");
-    //Serial.print(yaw_kd); Serial.print(" ");
-    //Serial.println();
+    //telemetry << yaw_in << yaw_gyro << yaw_pid.getP() << yaw_pid.getI() << yaw_pid.getD() << "\n";
+    //telemetry << throttle_in * 10 << throttle_out << "\n";
+    
     execute();
     output();
   }
@@ -104,15 +81,10 @@ void MjxController::update()
 
 void MjxController::execute()
 {
-  throttle_servo.write(throttle_out, 0.0);
-  yaw_servo.write((throttle_out > 10 ? yaw_out : 0), 0.0);
-  pitch_servo.write(pitch_out, 300.0);
-  roll_servo.write(roll_out, 300.0);
-  
-  throttle_servo.update();
-  yaw_servo.update();
-  pitch_servo.update();
-  roll_servo.update();
+  throttle_servo.writeMicroseconds(throttle_out);
+  yaw_servo.writeMicroseconds(throttle_out > 1050 ? yaw_out : model.config.motor_pwm_min);
+  pitch_servo.writeMicroseconds(pitch_out);
+  roll_servo.writeMicroseconds(roll_out);
 }
 
 void MjxController::output()

@@ -34,7 +34,7 @@ class MjxModel
     void updateGyro(const RTVector3& value);
 
     const RTVector3& getPose() const;
-    void updatePose(const RTVector3& value);
+    void updatePose(const RTVector3& value, float dt);
   
     MjxConfig config;
   

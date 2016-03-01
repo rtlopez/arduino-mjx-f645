@@ -29,6 +29,10 @@ class MjxConfig
       yaw_pin(5),
       pitch_pin(10),
       roll_pin(9),
+      servo_pwm_min(1000),
+      servo_pwm_max(1900),
+      motor_pwm_min(1000),
+      motor_pwm_max(1900),
       yaw_pid_kp(0.30),
       yaw_pid_ki(0.60),
       yaw_pid_kd(0.01)
@@ -44,6 +48,10 @@ class MjxConfig
     uint8_t yaw_pin;          // tail rotate, (gyro_z)
     uint8_t pitch_pin;        // move forward/backward, (gyro_y)
     uint8_t roll_pin;         // move left/right, (gyro_x)
+    uint16_t servo_pwm_min;
+    uint16_t servo_pwm_max;
+    uint16_t motor_pwm_min;
+    uint16_t motor_pwm_max;
     double yaw_pid_kp;        // Yaw PID P param
     double yaw_pid_ki;        // Yaw PID I param
     double yaw_pid_kd;        // Yaw PID D param

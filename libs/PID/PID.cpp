@@ -5,15 +5,13 @@
  * This Library is licensed under a GPLv3 License
  **********************************************************************************************/
 
-#include "Arduino.h"
-#include "MjxConfig.h"
-#include "MjxPID.h"
+#include "PID.h"
 
 /*Constructor (...)*********************************************************
  *    The parameters specified here are those for for which we can't set up 
  *    reliable defaults, so we need to have the user set them.
  ***************************************************************************/
-MjxPID::MjxPID(double* Input, double* Output, double* Setpoint, double Kp, double Ki, double Kd, int ControllerDirection)
+PID::PID(double* Input, double* Output, double* Setpoint, double Kp, double Ki, double Kd, int ControllerDirection)
 {
   myOutput = Output;
   myInput = Input;
@@ -37,7 +35,7 @@ MjxPID::MjxPID(double* Input, double* Output, double* Setpoint, double Kp, doubl
  *   pid Output needs to be computed.  returns true when the output is computed,
  *   false when nothing has been done.
  **********************************************************************************/ 
-bool MjxPID::Compute()
+bool PID::Compute()
 {
    if(!inAuto) return false;
    unsigned long now = millis();
@@ -50,20 +48,20 @@ bool MjxPID::Compute()
       double dSetpoint = (*mySetpoint - lastSetpoint);
 
       PTerm = kp * error;
-      FixPTerm();
+      LimitPTerm();
 
       ITerm += (ki * error);
-      FixITerm();
+      LimitITerm();
 
       //DTerm = - kd * dInput;
       DTerm = - kd * dInput + 0.01 * kd * dSetpoint;
-      FixDTerm();
+      LimitDTerm();
  
       /*Compute PID Output*/
       //*myOutput = kp * error + ITerm - kd * dInput;
       //*myOutput = kp * error + ITerm - kd * dInput + 0.005 * kd * dSetpoint;
       *myOutput = PTerm + ITerm + DTerm;
-      FixOutput();
+      LimitOutput();
 	  
       /*Remember some variables for next time*/
       lastSetpoint = *mySetpoint;
@@ -75,28 +73,34 @@ bool MjxPID::Compute()
    return false;
 }
 
-void MjxPID::FixITerm()
+void PID::LimitITerm()
 {
-  if(ITerm > outMax * outIRate) ITerm = outMax * outIRate;
-  else if(ITerm < outMin * outIRate) ITerm = outMin * outIRate;
+  //ITerm = ApplyLimit(ITerm, outMin, outMax);
+  ITerm = ApplyLimit(ITerm, outMin * outRate, outMax * outRate);
 }
 
-void MjxPID::FixPTerm()
+void PID::LimitPTerm()
 {
-  if(PTerm > outMax * outIRate) PTerm = outMax * outIRate;
-  else if(PTerm < outMin * outIRate) PTerm = outMin * outIRate;
+  PTerm = ApplyLimit(PTerm, outMin, outMax);
+  //PTerm = ApplyLimit(PTerm, outMin * outRate, outMax * outRate);
 }
 
-void MjxPID::FixDTerm()
+void PID::LimitDTerm()
 {
-  if(DTerm > outMax * outIRate) DTerm = outMax * outIRate;
-  else if(DTerm < outMin * outIRate) DTerm = outMin * outIRate;
+  DTerm = ApplyLimit(DTerm, outMin, outMax);
+  //DTerm = ApplyLimit(DTerm, outMin * outRate, outMax * outRate);
 }
 
-void MjxPID::FixOutput()
+void PID::LimitOutput()
 {
-  if(*myOutput > outMax) *myOutput = outMax;
-  else if(*myOutput < outMin) *myOutput = outMin;
+  *myOutput = ApplyLimit(*myOutput, outMin, outMax);
+}
+
+double PID::ApplyLimit(double v, double min, double max)
+{
+  if(v > max) return max;
+  else if(v < min) return min;
+  else return v;
 }
 
 /* SetTunings(...)*************************************************************
@@ -104,7 +108,7 @@ void MjxPID::FixOutput()
  * it's called automatically from the constructor, but tunings can also
  * be adjusted on the fly during normal operation
  ******************************************************************************/ 
-void MjxPID::SetTunings(double Kp, double Ki, double Kd)
+void PID::SetTunings(double Kp, double Ki, double Kd)
 {
    if (Kp<0 || Ki<0 || Kd<0) return;
  
@@ -125,7 +129,7 @@ void MjxPID::SetTunings(double Kp, double Ki, double Kd)
 /* SetSampleTime(...) *********************************************************
  * sets the period, in Milliseconds, at which the calculation is performed	
  ******************************************************************************/
-void MjxPID::SetSampleTime(int NewSampleTime)
+void PID::SetSampleTime(int NewSampleTime)
 {
    if (NewSampleTime > 0)
    {
@@ -144,18 +148,18 @@ void MjxPID::SetSampleTime(int NewSampleTime)
  *  want to clamp it from 0-125.  who knows.  at any rate, that can all be done
  *  here.
  **************************************************************************/
-void MjxPID::SetOutputLimits(double Min, double Max, double iRate)
+void PID::SetOutputLimits(double Min, double Max, double Rate)
 {
     if(Min >= Max) return;
     outMin = Min;
     outMax = Max;
-    outIRate = iRate;
+    outRate = Rate;
     if(inAuto)
     {
-      FixPTerm();
-      FixITerm();
-      FixDTerm();
-      FixOutput();
+      LimitPTerm();
+      LimitITerm();
+      LimitDTerm();
+      LimitOutput();
     }
 }
 
@@ -164,7 +168,7 @@ void MjxPID::SetOutputLimits(double Min, double Max, double iRate)
  * when the transition from manual to auto occurs, the controller is
  * automatically initialized
  ******************************************************************************/ 
-void MjxPID::SetMode(int Mode)
+void PID::SetMode(int Mode)
 {
     bool newAuto = (Mode == AUTOMATIC);
     if(newAuto == !inAuto)
@@ -178,16 +182,16 @@ void MjxPID::SetMode(int Mode)
  *	does all the things that need to happen to ensure a bumpless transfer
  *  from manual to automatic mode.
  ******************************************************************************/ 
-void MjxPID::Initialize()
+void PID::Initialize()
 {
-    FixOutput();
+    LimitOutput();
     ITerm = *myOutput;
     lastInput = *myInput;
     lastSetpoint = *mySetpoint;
-    FixPTerm();
-    FixITerm();
-    FixDTerm();
-    FixOutput();
+    LimitPTerm();
+    LimitITerm();
+    LimitDTerm();
+    LimitOutput();
 }
 
 /* SetControllerDirection(...)*************************************************
@@ -196,7 +200,7 @@ void MjxPID::Initialize()
  * know which one, because otherwise we may increase the output when we should
  * be decreasing.  This is called from the constructor.
  ******************************************************************************/
-void MjxPID::SetControllerDirection(int Direction)
+void PID::SetControllerDirection(int Direction)
 {
    if(inAuto && Direction !=controllerDirection)
    {
@@ -212,9 +216,9 @@ void MjxPID::SetControllerDirection(int Direction)
  * functions query the internal state of the PID.  they're here for display 
  * purposes.  this are the functions the PID Front-end uses for example
  ******************************************************************************/
-double MjxPID::GetKp() { return  dispKp; }
-double MjxPID::GetKi() { return  dispKi; }
-double MjxPID::GetKd() { return  dispKd; }
-int MjxPID::GetMode() { return  inAuto ? AUTOMATIC : MANUAL; }
-int MjxPID::GetDirection() { return controllerDirection; }
+double PID::GetKp() { return  dispKp; }
+double PID::GetKi() { return  dispKi; }
+double PID::GetKd() { return  dispKd; }
+int PID::GetMode() { return  inAuto ? AUTOMATIC : MANUAL; }
+int PID::GetDirection() { return controllerDirection; }
 

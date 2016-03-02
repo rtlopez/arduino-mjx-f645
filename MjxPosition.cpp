@@ -42,7 +42,7 @@ void MjxPosition::update()
     fusion.newIMUData(imu.getGyro(), imu.getAccel(), imu.getCompass(), imu.getTimestamp());
     tm = imu.getTimestamp();
   }
-  if(loopCount && tm - prev_tm >= model.getUpdateInterval())
+  if(loopCount && tm - prev_tm >= static_cast<uint16_t>(model.getUpdateInterval()))
   {
     float dt = tm - prev_tm / 1000.0;
     const RTVector3& pose = fusion.getFusionPose();

@@ -10,12 +10,12 @@
 class MjxController
 {
   public:
-    MjxController(const MjxModel& m, MjxTelemetry& t);
+    MjxController(MjxModel& m, MjxTelemetry& t);
     void begin();
     void update();
     void execute();
   private:
-    const MjxModel& model;
+    MjxModel& model;
     MjxTelemetry& telemetry;
     int16_t throttle_in, throttle_out;
     double yaw_in, yaw_out;
@@ -24,6 +24,7 @@ class MjxController
     double yaw_gyro;
     PID yaw_pid;
     Servo throttle_servo, yaw_servo, pitch_servo, roll_servo;
+    unsigned long long prev_tm;
 };
 
 #endif

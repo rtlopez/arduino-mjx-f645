@@ -41,6 +41,7 @@ enum mjx_config_f {
   YAW_PID_KP,
   YAW_PID_KI,
   YAW_PID_KD,
+  
   GYRO_X,
   GYRO_Y,
   GYRO_Z,
@@ -97,6 +98,11 @@ class MjxModel
     void setOutputYaw(int16_t val)       { idata[OUTPUT_YAW] = val; }
     void setOutputPitch(int16_t val)     { idata[OUTPUT_PITCH] = val; }
     void setOutputRoll(int16_t val)      { idata[OUTPUT_ROLL] = val; }
+
+    void setYawPidE(float val)      { fdata[YAW_PID_E] = val; }
+    void setYawPidP(float val)      { fdata[YAW_PID_P] = val; }
+    void setYawPidI(float val)      { fdata[YAW_PID_I] = val; }
+    void setYawPidD(float val)      { fdata[YAW_PID_D] = val; }
 
     int16_t get(mjx_config_i i) const { return idata[i]; }
     float   get(mjx_config_f i) const { return fdata[i]; }
